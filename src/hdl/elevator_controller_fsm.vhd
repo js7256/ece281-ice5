@@ -90,26 +90,27 @@ architecture Behavioral of elevator_controller_fsm is
 	type sm_floor is (s_floor1, s_floor2, s_floor3, s_floor4);
 	
 	-- Here you create variables that can take on the values defined above. Neat!	
-	signal f_Q, f_Q_next: sm_floor;
+	signal f_Q, f_Q_next : sm_floor;
 
 begin
 
 	-- CONCURRENT STATEMENTS ------------------------------------------------------------------------------
 	-- Next State Logic
-    f_Q_next <= <state> when (<condition>) else -- going up
-                ...
-                ...
-                ... -- going down
-                ...
-                ... else
-                ...; -- default case
+    f_Q_next <= -- going up
+                s_floor2 when i_up_down = '1' and f_Q = s_floor1 else
+                s_floor3 when i_up_down = '1' and f_Q = s_floor2 else
+                s_floor4 when i_up_down = '1' and f_Q = s_floor3 else
+                s_floor2 when i_up_down = '0' and f_Q = s_floor3 else
+                s_floor3 when i_up_down = '0' and f_Q = s_floor4 else -- going down
+                s_floor1; -- default case
   
 	-- Output logic
     with f_Q select
-        o_floor <= <value> when s_floor1,
-                ...
-                ...
-                <value> when others; -- default is floor 2
+        o_floor <= 
+                   "0001" when s_floor1,
+                   "0011" when s_floor3,
+                   "0100" when s_floor4,
+                   "0010" when others; -- default is floor 2
 	
 	-------------------------------------------------------------------------------------------------------
 	
@@ -118,7 +119,14 @@ begin
 	register_proc : process (i_clk)
     begin
          -- synchronous reset
-        
+        if i_reset = '1' then
+            f_Q <= s_floor2;
+        elsif rising_edge(i_clk) then
+            f_Q <= f_Q_next;
+        end if;
+        if i_stop = '1' then 
+            f_Q <= f_Q;
+        end if;
         -- if elevator is enabled, advance floors
         -- if not enabled, stay at current floor
     
